@@ -1,0 +1,9 @@
+{
+  "name": "np_wp_plugin/bp-ms-signup-password",
+  "type": "wordpress-plugin",
+  "description": "Buddypress + Multisite Signup Password",
+  "keywords": ["plugin","wordpress","multisite","buddypress"],
+  "require": {
+    "composer/installers": "~1.0.6"
+  }
+}

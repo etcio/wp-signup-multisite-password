@@ -1,11 +1,11 @@
 <?php
 /*
-Plugin Name: Set password on Multisite Registration
-Plugin URI:
-Description: Lets users set a password on multisite registration
-Author: khromov, WPMUDEV
-Version: 2014.06.03
-Author URI: http://premium.wpmudev.org/
+Plugin Name: Registration Password for Buddypress + Multisite
+Plugin URI: https://github.com/etcio/wp-signup-multisite-password
+Description: Lets users set a password on multisite + buddypress registration
+Author: WPMUDEV -> khromov -> etc
+Version: 0.1
+Author URI: https://github.com/etcio/wp-signup-multisite-password
 Network: true
 Text Domain: multisite_password_registration
 */
@@ -80,7 +80,7 @@ if(is_multisite())
 	{
 		if(isset($_POST['password_1']))
 		{
-			$add_meta = array('password' => (isset($_POST['password_1_base64']) ? $_POST['password_1'] : base64_encode($_POST['password_1']))); //Store as base64 to avoid injections
+			$add_meta = array('password' => (isset($_POST['password_1_base64']) ? wp_hash_password(base64_decode($_POST['password_1'])) : wp_hash_password($_POST['password_1']))); //Store as base64 to avoid injections
 			$meta = array_merge($add_meta, $meta);
 		}
 		//This should never happen.
@@ -102,42 +102,4 @@ if(is_multisite())
 		}
 	});
 
-	/** Override wp_generate_password() once when we're generating our form **/
-	add_filter('random_password', function($password)
-	{
-		global $wpdb;
-
-		//Check key in GET and then fallback to POST.
-		if(isset($_GET['key']))
-			$key = $_GET['key'];
-		else if(isset($_POST['key']))
-			$key = $_POST['key'];
-		else
-			$key = null;
-
-		//Look for active signup
-		$signup = $wpdb->get_row($wpdb->prepare("SELECT * FROM $wpdb->signups WHERE activation_key = '%s'", $key));
-
-		//Only override filter on wp-activate.php screen
-		if(strpos($_SERVER['PHP_SELF'], 'wp-activate.php') && $key !== null && (!(empty($signup) || $signup->active)))
-		{
-			$meta = maybe_unserialize($signup->meta);
-			if(isset($meta['password']))
-			{
-				//Set the "random" password to our predefined one
-				$password = base64_decode($meta['password']);
-
-				//Remove old password from signup meta (As it doesn't appear to get deleted.)
-				unset($meta['password']);
-				$meta = maybe_serialize( $meta );
-				$wpdb->update($wpdb->signups, array( 'meta' => $meta ), array( 'activation_key' => $key ), array( '%s' ), array( '%s' ));
-
-				return $password;
-			}
-			else
-				return $password; //No password meta set = just activate user as normal with random password
-		}
-		else
-			return $password; //Regular usage, don't touch the password generation
-	});
 }
